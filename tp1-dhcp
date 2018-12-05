@@ -1,5 +1,14 @@
 #!/bin/bash
 
+id=co="`id -un`"
+if [ "$id" = 0 ]
+then
+	echo "Super user root confirmed !"
+else
+	echo "You don't have enough permission to do that."
+	exit 1
+fi
+
 echo "IP Forwarding : Activation.."
 echo "-uncomment line in "/etc/sysctl.conf""
 
@@ -11,6 +20,10 @@ then
 else
 	echo "Already done"
 fi
+
+echo "Network interfaces liste :"
+ifconfig | egrep '^[^ ]' |  awk '{print $1}'
+read -p 'Interface name : ' uservar
 
 echo "Nat activation.."
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
