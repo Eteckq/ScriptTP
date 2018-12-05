@@ -23,7 +23,7 @@ fi
 
 echo "Network interfaces liste :"
 ip a | grep UP | cut -d " " -f 2 | cut -d ":" -f 1
-read -p 'Interface name : ' uservar
+read -p "Interface name : " uservar
 
 echo "Nat activation.."
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
@@ -41,9 +41,7 @@ else
 fi
 
 #Begin asking user input
-
-echo "Entrez l'IP de votre serveur DHCP: (192.168.0.1)"
-read ip
+read -p "Entrez l'IP de votre serveur DHCP (192.168.0.1) :" ip
 
 if [ "$ip" == "" ]
 then
@@ -53,9 +51,7 @@ echo "IP choisie: $ip"
 
 #Split ip into an array
 IFS='.' read -ra ADDR <<< "$ip"
-
-echo "Entrez le pool d'adresse IP: (10-50)"
-read pool
+read -p "Entrez le pool d'adresse IP (10-50) :" pool
 
 if [ "$pool" == "" ]
 then
