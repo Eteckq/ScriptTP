@@ -5,9 +5,10 @@ if [ "$id" = 0 ]
 then
 	echo "Super user root confirmed !"
 else
-	echo "You don't have enough permission to do that."
-	exit 1
+        whiptail --title "Permission Error !" --msgbox "You don't have enough permission to do that ! Press OK to quit." 10 60
+        exit 1
 fi
+
 
 echo "IP Forwarding : Activation.."
 echo "-uncomment line in "/etc/sysctl.conf""
