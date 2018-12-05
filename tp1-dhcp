@@ -1,6 +1,6 @@
 #!/bin/bash
 
-id=co="`id -u`"
+id="`id -u`"
 if [ "$id" = 0 ]
 then
 	echo "Super user root confirmed !"
