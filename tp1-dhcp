@@ -22,7 +22,7 @@ else
 fi
 
 echo "Network interfaces liste :"
-ifconfig | egrep '^[^ ]' |  awk '{print $1}'
+ip a | grep UP | cut -d " " -f 2 | cut -d ":" -f 1
 read -p 'Interface name : ' uservar
 
 echo "Nat activation.."
