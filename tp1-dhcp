@@ -66,7 +66,7 @@ IFS='-' read -ra POOL <<< "$pool"
 echo "Pool choisi : ${ADDR[0]}.${ADDR[1]}.${ADDR[2]}.${POOL[0]} --> ${ADDR[0]}.${ADDR[1]}.${ADDR[2]}.${POOL[1]}"
 
 #Create DHCP file
-
+echo "Creating dhcp config file.."
 echo "
 default-lease-time 600;
 max-lease-time 7200;
@@ -75,7 +75,7 @@ option subnet-mask 255.255.255.0;
 subnet $ip netmask 255.255.255.0 {
 	range ${ADDR[0]}.${ADDR[1]}.${ADDR[2]}.${POOL[0]} ${ADDR[0]}.${ADDR[1]}.${ADDR[2]}.${POOL[1]};
 	option routeurs ${ADDR[0]}.${ADDR[1]}.${ADDR[2]}.254;
-	option domain-name-servers ${ADDR[0]}.${ADDR[1]}.${ADDR[2]}.1;
 }
 " > /etc/dhcp/dhcpd.conf
-
+echo "done."
+#DNS pour plus tard : option domain-name-servers ${ADDR[0]}.${ADDR[1]}.${ADDR[2]}.1;
