@@ -1,20 +1,30 @@
 #!/bin/bash
+clear
 
-echo "IP Forwarding : Activation.."
-echo "-uncomment line in "/etc/sysctl.conf""
+cat << EOF
+-------------------------------------
+Configuration DHCP
+-------------------------------------
+
+IP Forwarding : Activation..
+-uncomment line in "/etc/sysctl.conf"
+
+EOF
+
+#Modification du fichier /etc/sysctl.conf
 
 grep "#net.ipv4.ip_forward=1" /etc/sysctl.conf
 if [ "$?" = 0 ]
 then 
 	sed -i 's/#net.ipv4.ip_forward=1.*/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-	echo "done."
+	echo "Done."
 else
 	echo "Already done"
 fi
 
 echo "Nat activation.."
 iptables -t nat -A POSTROUTING -o enp -j MASQUERADE
-echo "done."
+echo "Done."
 
 echo "Installing dhcp.."
 apt-get install isc-dhcp-server -y > /dev/null
@@ -52,7 +62,6 @@ echo "Creating dhcp config file.."
 echo "
 default-lease-time 600;
 max-lease-time 7200;
-
 option subnet-mask 255.255.255.0;
 subnet $ip netmask 255.255.255.0 {
 	range ${split_ip[0]}.${split_ip[1]}.${split_ip[2]}.${POOL[0]} ${split_ip[0]}.${split_ip[1]}.${split_ip[2]}.${POOL[1]};
@@ -61,4 +70,3 @@ subnet $ip netmask 255.255.255.0 {
 " > /etc/dhcp/dhcpd.conf
 echo "done."
 #DNS pour plus tard : option domain-name-servers ${split_ip[0]}.${split_ip[1]}.${split_ip[2]}.1;
-
