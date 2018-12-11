@@ -1,0 +1,11 @@
+cat << EOF
+-------------------------------------
+Installation des dépendances
+-------------------------------------
+Update system..
+EOF
+apt-get update >/dev/null
+echo "Install python.."
+apt-get install python3 >/dev/null
+echo "Done!"
+
