@@ -3,70 +3,143 @@ clear
 
 cat << EOF
 -------------------------------------
-Configuration DHCP
+	Installation des dépendances
 -------------------------------------
+EOF
+echo "Update system.."
+apt-get update >/dev/null
+echo "Install python.."
+apt-get install python3 >/dev/null
+echo "Done!"
 
-IP Forwarding : Activation..
--uncomment line in "/etc/sysctl.conf"
-
+cat << EOF
+-------------------------------------
+	Configuration du network
+-------------------------------------
 EOF
 
-#Modification du fichier /etc/sysctl.conf
+#Modification du fichier /etc/network/interface
 
+echo "Interfaces disponibles : \n`ip addr | grep mtu | cut -d ":" -f2 | cut -d " " -f2`"
+read -p "Choissisez une interface: " interface
+echo "Interface Choisie : $interface"
+
+read -p "Entrez l'IP de la machine: (192.168.0.1)" ip
+
+
+if [ "$ip" = "" ]
+then
+	ip="192.168.0.1"
+fi
+
+ip1="$(echo "$ip" | cut -d'.' -f1)"
+ip2="$(echo $ip | cut -d'.' -f2)"
+ip3="$(echo $ip | cut -d'.' -f3)"
+ip4="$(echo $ip | cut -d'.' -f4)"
+
+echo "IP Choisie : $ip1.$ip2.$ip3.$ip4"
+
+read -p "Entrez le masque: (255.255.255.255)" mask
+
+if [ "$mask" = "" ]
+then
+	mask="255.255.255.255"
+fi
+
+echo "Masque choisi : $mask"
+
+read -p "Entrez l'ip de la passerelle: (optional)" gateway
+
+if [ "$gateway" != "" ]
+then
+	echo "Passerelle choisie : $gateway"
+	gateway="gateway $gateway"
+fi
+
+echo "Writing file : /etc/network/interfaces"
+
+echo "
+#Please remove existing config for interface "$interface"
+auto $interface
+iface $interface inet static
+address $ip
+netmask $mask
+$gateway
+"  >> /etc/network/interfaces
+
+echo "Done!"
+
+cat << EOF
+-------------------------------------
+   Configuration de la passerelle
+-------------------------------------
+EOF
+
+
+#Modification du fichier /etc/sysctl.conf
+echo "Port forwarding activation.."
 grep "#net.ipv4.ip_forward=1" /etc/sysctl.conf
 if [ "$?" = 0 ]
 then 
 	sed -i 's/#net.ipv4.ip_forward=1.*/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-	echo "Done."
+	echo "Done!"
 else
 	echo "Already done"
 fi
 
 echo "Nat activation.."
 iptables -t nat -A POSTROUTING -o enp -j MASQUERADE
-echo "Done."
+echo "Done!"
+
+cat << EOF
+-------------------------------------
+   Configuration du serveur DHCP
+-------------------------------------
+EOF
 
 echo "Installing dhcp.."
 apt-get install isc-dhcp-server -y > /dev/null
 
-#Begin asking user input
+read -p "Entrez l'IP du serveur dhcp: $ip" ipdhcp
 
-echo "Entrez l'IP de votre serveur DHCP: (192.168.0.1)"
-read ip
 
-if [ "$ip" = "" ]
+if [ "$ipdhcp" = "" ]
 then
-	ip="192.168.0.1"
+	ipdhcp="$ip"
 fi
-split_ip=$(echo $ip | tr ";" "\n")
 
-echo "IP choisie: $ip"
+ipdhcp1="$(echo $ipdhcp | cut -d'.' -f1)"
+ipdhcp2="$(echo $ipdhcp | cut -d'.' -f2)"
+ipdhcp3="$(echo $ipdhcp | cut -d'.' -f3)"
+ipdhcp4="$(echo $ipdhcp | cut -d'.' -f4)"
 
-#Split ip into an array
-split_ip=$(echo $ip | tr ";" "\n")
+echo "IP Choisie : $ipdhcp1.$ipdhcp2.$ipdhcp3.$ipdhcp4"
 
-echo "Entrez le pool d'adresse IP: (10-50)"
-read pool
+read -p "Choisir le pool d'adresse: (10-50)" pool
 
 if [ "$pool" = "" ]
 then
 	pool="10-50"
 fi
 
-split_pool=$(echo $pool | tr "-" "\n")
+pool1="$(echo $pool | cut -d'-' -f1)"
+pool2="$(echo $pool | cut -d'-' -f2)"
 
-echo "Pool choisi: ${split_ip[0]}.${split_ip[1]}.${split_ip[2]}.${split_pool[0]} --> ${split_ip[0]}.${split_ip[1]}.${split_ip[2]}.${split_pool[1]}"
+echo "Pool choisi: $ipdhcp1.$ipdhcp2.$ipdhcp3.pool1 --> $ipdhcp1.$ipdhcp2.$ipdhcp3.pool2"
 
-#Create DHCP file
-echo "Creating dhcp config file.."
+
+
+
+echo "Writing file : "
+
 echo "
 default-lease-time 600;
 max-lease-time 7200;
 option subnet-mask 255.255.255.0;
-subnet $ip netmask 255.255.255.0 {
-	range ${split_ip[0]}.${split_ip[1]}.${split_ip[2]}.${POOL[0]} ${split_ip[0]}.${split_ip[1]}.${split_ip[2]}.${POOL[1]};
-	option routeurs ${split_ip[0]}.${split_ip[1]}.${split_ip[2]}.254;
+subnet $ipdhcp netmask 255.255.255.0 {
+	range $ipdhcp1.$ipdhcp2.$ipdhcp3.$pool1 $ipdhcp1.$ipdhcp2.$ipdhcp3.$pool2;
+	option routers $ipdhcp1.$ipdhcp2.$ipdhcp3.254;
 }
 " > /etc/dhcp/dhcpd.conf
-echo "done."
-#DNS pour plus tard : option domain-name-servers ${split_ip[0]}.${split_ip[1]}.${split_ip[2]}.1;
+
+echo "Done!"
