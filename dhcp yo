@@ -24,7 +24,7 @@ echo "Interfaces disponibles : \n`ip addr | grep mtu | cut -d ":" -f2 | cut -d "
 read -p "Choissisez une interface: " interface
 echo "Interface Choisie : $interface"
 
-read -p "Entrez l'IP de la machine: (192.168.0.1)" ip
+read -p "Entrez l'IP de la machine: (192.168.0.1) " ip
 
 
 if [ "$ip" = "" ]
@@ -39,16 +39,16 @@ ip4="$(echo $ip | cut -d'.' -f4)"
 
 echo "IP Choisie : $ip1.$ip2.$ip3.$ip4"
 
-read -p "Entrez le masque: (255.255.255.255)" mask
+read -p "Entrez le masque: (255.255.255.0) " mask
 
 if [ "$mask" = "" ]
 then
-	mask="255.255.255.255"
+	mask="255.255.255.0"
 fi
 
 echo "Masque choisi : $mask"
 
-read -p "Entrez l'ip de la passerelle: (optional)" gateway
+read -p "Entrez l'ip de la passerelle: ($ip1.$ip2 ?) " gateway
 
 if [ "$gateway" != "" ]
 then
@@ -69,27 +69,27 @@ $gateway
 
 echo "Done!"
 
-cat << EOF
--------------------------------------
-   Configuration de la passerelle
--------------------------------------
-EOF
+#cat << EOF
+#-------------------------------------
+#   Configuration de la passerelle
+#-------------------------------------
+#EOF
 
 
 #Modification du fichier /etc/sysctl.conf
-echo "Port forwarding activation.."
-grep "#net.ipv4.ip_forward=1" /etc/sysctl.conf
-if [ "$?" = 0 ]
-then 
-	sed -i 's/#net.ipv4.ip_forward=1.*/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-	echo "Done!"
-else
-	echo "Already done"
-fi
+#echo "Port forwarding activation.."
+#grep "#net.ipv4.ip_forward=1" /etc/sysctl.conf
+#if [ "$?" = 0 ]
+#then 
+#	sed -i 's/#net.ipv4.ip_forward=1.*/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+#	echo "Done!"
+#else
+#	echo "Already done"
+#fi
 
-echo "Nat activation.."
-iptables -t nat -A POSTROUTING -o enp -j MASQUERADE
-echo "Done!"
+#echo "Nat activation.."
+#iptables -t nat -A POSTROUTING -o enp -j MASQUERADE
+#echo "Done!"
 
 cat << EOF
 -------------------------------------
@@ -125,12 +125,17 @@ fi
 pool1="$(echo $pool | cut -d'-' -f1)"
 pool2="$(echo $pool | cut -d'-' -f2)"
 
-echo "Pool choisi: $ipdhcp1.$ipdhcp2.$ipdhcp3.pool1 --> $ipdhcp1.$ipdhcp2.$ipdhcp3.pool2"
+echo "Pool choisi: $ipdhcp1.$ipdhcp2.$ipdhcp3.$pool1 --> $ipdhcp1.$ipdhcp2.$ipdhcp3.$pool2"
+
+read -p "Choisir la passerelle: $ip1.$ip2.$ip3.254" passerelle
+
+if [ "$passerelle" = "" ]
+then
+	passerelle="$ip1.$ip2.$ip3.254"
+fi
 
 
-
-
-echo "Writing file : "
+echo "Writing file.."
 
 echo "
 default-lease-time 600;
@@ -138,7 +143,7 @@ max-lease-time 7200;
 option subnet-mask 255.255.255.0;
 subnet $ipdhcp netmask 255.255.255.0 {
 	range $ipdhcp1.$ipdhcp2.$ipdhcp3.$pool1 $ipdhcp1.$ipdhcp2.$ipdhcp3.$pool2;
-	option routers $ipdhcp1.$ipdhcp2.$ipdhcp3.254;
+	option routers $passerelle;
 }
 " > /etc/dhcp/dhcpd.conf
 
